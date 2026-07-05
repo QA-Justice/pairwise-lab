@@ -28,7 +28,15 @@
       <main class="workspace">
         <section class="panel panel--input" aria-labelledby="input-title">
           <div class="panel__head">
-            <h2 id="input-title">INPUT BLOCK</h2>
+            <div class="tooltip-host">
+              <h2 id="input-title" tabindex="0">INPUT BLOCK</h2>
+              <div class="tooltip" role="tooltip">
+                One factor per line.<br />
+                Basic: Factor=value1, value2<br />
+                Conditional: Factor | Parent=value = value1, value2<br />
+                Excluded combinations go below.
+              </div>
+            </div>
             <button id="sampleButton" class="button button--secondary" type="button">
               LOAD SAMPLE
             </button>

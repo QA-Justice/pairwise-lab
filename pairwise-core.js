@@ -257,9 +257,14 @@
   function generatePairwise(factors, constraints, options) {
     const maxCandidates = options && options.maxCandidates ? options.maxCandidates : 50000;
     const strength = options && options.strength ? Number(options.strength) : 2;
+    const maxCases = options && options.maxCases ? Number(options.maxCases) : null;
 
     if (![2, 3].includes(strength)) {
       throw new Error("Only 2-wise and 3-wise are supported in this MVP.");
+    }
+
+    if (maxCases !== null && (!Number.isInteger(maxCases) || maxCases < 1)) {
+      throw new Error("Max cases must be empty or a positive whole number.");
     }
 
     if (factors.length < strength) {
@@ -280,7 +285,7 @@
     const uncovered = new Set(universe);
     const tests = [];
 
-    while (uncovered.size > 0) {
+    while (uncovered.size > 0 && (maxCases === null || tests.length < maxCases)) {
       let bestCandidate = null;
       let bestScore = -1;
 
@@ -310,6 +315,8 @@
       stats: {
         candidateCount: candidates.length,
         strength,
+        maxCases,
+        limited: maxCases !== null && uncovered.size > 0,
         totalTuples: universe.size,
         coveredTuples: universe.size - uncovered.size,
         totalPairs: universe.size,

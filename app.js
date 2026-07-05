@@ -101,6 +101,7 @@
 
   function generate() {
     const strength = getSelectedStrength();
+    const maxCases = getSelectedMaxCases();
     const parsedFactors = core.parseFactors(els.factorInput.value);
     if (parsedFactors.errors.length > 0) {
       lastResult = { factors: [], tests: [], stats: null };
@@ -124,6 +125,7 @@
     try {
       const result = core.generatePairwise(parsedFactors.factors, parsedConstraints.constraints, {
         strength,
+        maxCases,
       });
       lastResult = {
         factors: parsedFactors.factors,
@@ -136,7 +138,7 @@
       setMessage(
         `${result.tests.length} CASES / ${result.stats.coveredTuples} OF ${result.stats.totalTuples} ${
           strength === 3 ? "TRIPLES" : "PAIRS"
-        }`,
+        } / ${result.stats.coverage}%${result.stats.limited ? " / LIMITED" : ""}`,
         "ok",
       );
     } catch (error) {
@@ -168,6 +170,14 @@
   function getSelectedStrength() {
     const checked = document.querySelector('input[name="strength"]:checked');
     return checked ? Number(checked.value) : 2;
+  }
+
+  function getSelectedMaxCases() {
+    const checked = document.querySelector('input[name="maxCases"]:checked');
+    if (!checked || checked.value === "") {
+      return null;
+    }
+    return Number(checked.value);
   }
 
   function updateStrengthLabel() {

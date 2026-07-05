@@ -190,6 +190,26 @@ textarea:focus {
   margin: 24px 0 16px;
 }
 
+.field-group {
+  margin: 0 0 20px;
+}
+
+.field-group__label {
+  display: block;
+  margin-bottom: 8px;
+  font-family: var(--headline);
+  font-size: 13px;
+  line-height: 1.2;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.case-limit-row {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
 .radio-line {
   display: flex;
   align-items: center;
@@ -200,6 +220,12 @@ textarea:focus {
   cursor: pointer;
   font-family: var(--body);
   font-size: 14px;
+}
+
+.radio-line--compact {
+  justify-content: center;
+  min-height: 40px;
+  padding: 8px;
 }
 
 .radio-line--muted {
@@ -437,6 +463,7 @@ tbody tr:hover td {
   }
 
   .control-row,
+  .case-limit-row,
   .stats-grid {
     grid-template-columns: 1fr;
   }

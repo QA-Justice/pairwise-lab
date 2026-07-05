@@ -6,32 +6,58 @@
   }
 
   function parseFactors(text) {
-    const factors = [];
+    const factorMap = new Map();
     const errors = [];
-    const seen = new Set();
+    const conditionalRules = [];
     const lines = text
       .split(/\r?\n/)
       .map((line) => line.trim())
       .filter(Boolean);
 
+    function addFactorValues(name, values) {
+      if (!factorMap.has(name)) {
+        factorMap.set(name, []);
+      }
+      factorMap.set(name, unique([...factorMap.get(name), ...values]));
+    }
+
     lines.forEach((line, index) => {
+      const conditionalParts = line.split("|");
+      const isConditional = conditionalParts.length === 2;
+      const factorPart = isConditional ? conditionalParts[0].trim() : line;
+      const valuePart = isConditional ? conditionalParts[1].trim() : line;
       const equalsIndex = line.indexOf("=");
       const colonIndex = line.indexOf(":");
-      const separatorIndex =
+      const separatorIndex = isConditional ? valuePart.lastIndexOf("=") : -1;
+      const legacySeparatorIndex =
         equalsIndex === -1
           ? colonIndex
           : colonIndex === -1
             ? equalsIndex
             : Math.min(equalsIndex, colonIndex);
-      if (separatorIndex === -1) {
+
+      if (isConditional && !factorPart) {
+        errors.push(`Line ${index + 1}: conditional factor name is empty.`);
+        return;
+      }
+
+      if (!isConditional && legacySeparatorIndex === -1) {
         errors.push(`Line ${index + 1}: use "Factor=value, value".`);
         return;
       }
 
-      const name = line.slice(0, separatorIndex).trim();
+      if (isConditional && separatorIndex === -1) {
+        errors.push(`Line ${index + 1}: use "Factor | Condition=value = value, value".`);
+        return;
+      }
+
+      const name = isConditional ? factorPart : line.slice(0, legacySeparatorIndex).trim();
+      const conditionText = isConditional ? valuePart.slice(0, separatorIndex).trim() : "";
+      const rawValues = isConditional
+        ? valuePart.slice(separatorIndex + 1)
+        : line.slice(legacySeparatorIndex + 1);
       const values = unique(
-        line
-          .slice(separatorIndex + 1)
+        rawValues
           .split(",")
           .map((value) => value.trim())
           .filter(Boolean),
@@ -42,7 +68,7 @@
         return;
       }
 
-      if (seen.has(name)) {
+      if (!isConditional && factorMap.has(name)) {
         errors.push(`Line ${index + 1}: duplicate factor "${name}".`);
         return;
       }
@@ -52,15 +78,42 @@
         return;
       }
 
-      seen.add(name);
-      factors.push({ name, values });
+      addFactorValues(name, values);
+
+      if (isConditional) {
+        const conditions = splitConstraintLine(conditionText)
+          .map((part) => parseConstraintPart(part, []))
+          .filter(Boolean);
+
+        if (conditions.length === 0) {
+          errors.push(`Line ${index + 1}: conditional rule needs at least one condition.`);
+          return;
+        }
+
+        conditionalRules.push({
+          line: index + 1,
+          factor: name,
+          conditions,
+          allowedValues: values,
+        });
+      }
     });
+
+    const factors = Array.from(factorMap, ([name, values]) => ({ name, values }));
 
     if (factors.length < 2) {
       errors.push("Add at least two factors.");
     }
 
-    return { factors, errors };
+    const conditional = buildConditionalConstraints(factors, conditionalRules);
+
+    return {
+      factors,
+      errors: [...errors, ...conditional.errors],
+      autoConstraints: conditional.constraints,
+      autoRuleCount: conditional.constraints.length,
+      conditionalRuleCount: conditionalRules.length,
+    };
   }
 
   function normalizeConstraintText(line) {
@@ -90,6 +143,44 @@
       };
     }
     return null;
+  }
+
+  function buildConditionalConstraints(factors, conditionalRules) {
+    const constraints = [];
+    const errors = [];
+    const factorNames = factors.map((factor) => factor.name);
+    const factorByName = new Map(factors.map((factor) => [factor.name, factor]));
+
+    conditionalRules.forEach((rule) => {
+      rule.conditions.forEach((condition) => {
+        const factor = factorByName.get(condition.factor);
+        if (!factorNames.includes(condition.factor)) {
+          errors.push(`Line ${rule.line}: unknown condition factor "${condition.factor}".`);
+          return;
+        }
+        if (!factor.values.includes(condition.value)) {
+          errors.push(`Line ${rule.line}: unknown value "${condition.value}" for "${condition.factor}".`);
+        }
+      });
+
+      const target = factorByName.get(rule.factor);
+      if (!target) {
+        errors.push(`Line ${rule.line}: unknown conditional factor "${rule.factor}".`);
+        return;
+      }
+
+      target.values.forEach((value) => {
+        if (!rule.allowedValues.includes(value)) {
+          constraints.push({
+            raw: `AUTO Line ${rule.line}: ${rule.factor}=${value}`,
+            conditions: [...rule.conditions, { factor: rule.factor, value }],
+            auto: true,
+          });
+        }
+      });
+    });
+
+    return { constraints, errors };
   }
 
   function parseConstraints(text, factorSource) {

@@ -3,15 +3,17 @@
 
   const core = window.PairwiseCore;
   const sampleFactors = [
-    "Browser=Chrome, Edge, Safari, Firefox",
-    "OS=Windows, macOS, iOS, Android",
+    "Browser=Chrome, Edge, Safari",
+    "OS=Windows, macOS, iOS",
     "Login Type=Email, Google, Kakao",
-    "Plan=Free, Pro, Enterprise",
-    "Locale=ko-KR, en-US, ja-JP",
+    "Plan=Free, Pro",
+    "Payment Method | Plan=Free = N/A",
+    "Payment Method | Plan=Pro = Card, Bank",
+    "Feature | Plan=Free = Basic",
+    "Feature | Plan=Pro = Basic, Advanced",
   ].join("\n");
   const sampleConstraints = [
     "OS=iOS && Browser=Edge",
-    "OS=Android && Browser=Safari",
     "Plan=Free && Login Type=Kakao",
   ].join("\n");
 
@@ -123,7 +125,11 @@
     }
 
     try {
-      const result = core.generatePairwise(parsedFactors.factors, parsedConstraints.constraints, {
+      const allConstraints = [
+        ...parsedConstraints.constraints,
+        ...(parsedFactors.autoConstraints || []),
+      ];
+      const result = core.generatePairwise(parsedFactors.factors, allConstraints, {
         strength,
         maxCases,
       });
@@ -138,7 +144,9 @@
       setMessage(
         `${result.tests.length} CASES / ${result.stats.coveredTuples} OF ${result.stats.totalTuples} ${
           strength === 3 ? "TRIPLES" : "PAIRS"
-        } / ${result.stats.coverage}%${result.stats.limited ? " / LIMITED" : ""}`,
+        } / ${result.stats.coverage}%${
+          parsedFactors.autoRuleCount ? ` / ${parsedFactors.autoRuleCount} AUTO RULES` : ""
+        }${result.stats.limited ? " / LIMITED" : ""}`,
         "ok",
       );
     } catch (error) {

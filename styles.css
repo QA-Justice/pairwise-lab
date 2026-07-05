@@ -1,3 +1,12 @@
+@font-face {
+  font-family: "Pretendard";
+  font-weight: 45 920;
+  font-style: normal;
+  font-display: swap;
+  src: url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/woff2/PretendardVariable.woff2")
+    format("woff2");
+}
+
 :root {
   --black: #000000;
   --white: #ffffff;
@@ -7,9 +16,9 @@
   --red: #ff0000;
   --sunken: #f0f0f0;
   --disabled: #cccccc;
-  --body: "Work Sans", Arial, sans-serif;
+  --body: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", Arial, sans-serif;
   --headline: "Archivo Black", Impact, sans-serif;
-  --mono: "Space Mono", "Courier New", monospace;
+  --mono: "Space Mono", "Pretendard", "Courier New", monospace;
 }
 
 * {
@@ -159,7 +168,7 @@ textarea {
   border-radius: 0;
   color: var(--black);
   background: var(--sunken);
-  font-family: var(--mono);
+  font-family: var(--body);
   font-size: 15px;
   line-height: 1.5;
   resize: vertical;
@@ -189,7 +198,7 @@ textarea:focus {
   padding: 10px 12px;
   border: 3px solid var(--black);
   cursor: pointer;
-  font-family: var(--mono);
+  font-family: var(--body);
   font-size: 14px;
 }
 
@@ -337,9 +346,9 @@ textarea:focus {
 }
 
 .table-wrap {
-  overflow: auto;
+  overflow-x: auto;
+  overflow-y: visible;
   min-height: 420px;
-  max-height: calc(100vh - 420px);
 }
 
 .empty-state {
@@ -357,7 +366,7 @@ table {
   width: 100%;
   min-width: 720px;
   border-collapse: collapse;
-  font-family: var(--mono);
+  font-family: var(--body);
   font-size: 14px;
 }
 
@@ -399,9 +408,6 @@ tbody tr:hover td {
     grid-template-columns: 1fr;
   }
 
-  .table-wrap {
-    max-height: none;
-  }
 }
 
 @media (max-width: 700px) {
